@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="monuments">
+        <item>Berwick Fountain on the Grand Parade</item>
+        <item>Cork\'s National Monument on the Grand Parade</item>
+        <item>Father Mathew Statue on Patrick Street</item>
+        <item>Grand Parade Mooring Post</item>
+        <item>Huguenots Burial Ground</item>
+        <item>Old Walls of Cork in Bishop Lucey Park</item>
+    </string-array>
+
+    <string-array name="files">
+        <item>berwick</item>
+        <item>national</item>
+        <item>mathew</item>
+        <item>mooring</item>
+        <item>huguenot</item>
+        <item>citywall</item>
+    </string-array>
+
+</resources>
