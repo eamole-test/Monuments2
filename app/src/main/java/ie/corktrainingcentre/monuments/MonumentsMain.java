@@ -22,92 +22,138 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class MonumentsMain extends ActionBarActivity {
 
-    String[] monuments;
+    String[] monumentNames;
     String[] fileNames;
+
+    int[] monumentImageIds;
+    String[] monumentDetails;
+
+
+    // these are the objects to hold the template controls
+    ImageView monumentImageView;
+    TextView monumentNameView;
+    TextView monumentDetailView;
+
+    ViewGroup monumentsLayout;  // container layout. Use ViewGroup to handle any layout Relative, Linear etc
+    ViewGroup monumentLayout;   // template layout
+
+    ViewGroup prevMonumentLayout;  // remember previous layout to add below it!
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_monuments_main);
 
-        Resources res = getResources();
-        monuments = res.getStringArray(R.array.monuments);
-        fileNames = res.getStringArray(R.array.files);
+        loadMonumentData();
 
         // add all the monuments to the LinearLayout
         RelativeLayout monumentsLayout = (RelativeLayout) findViewById(R.id.monumentsLayout);
 
-        // create an array to store the monument RelativeLayouts
-        RelativeLayout[] rlMonuments = new RelativeLayout[monuments.length];
-        RelativeLayout.LayoutParams params = null;
-        int[] viewIDs = new int[monuments.length];
-        for(int i = 0; i < monuments.length; i++) {
-            viewIDs[i] = getUniqueViewId();
-            rlMonuments[i] = createMonumentItem(i);
-            rlMonuments[i].setId( viewIDs[i] );
-            params = new RelativeLayout.LayoutParams( RelativeLayout.LayoutParams.WRAP_CONTENT,
-                                                      RelativeLayout.LayoutParams.WRAP_CONTENT);
-            if( i > 0) {
-                // put this widget below the one above
-                params.addRule(RelativeLayout.BELOW, rlMonuments[i - 1].getId() );
-            }
-            monumentsLayout.addView( rlMonuments[i], params );
+        for(int i = 0; i < monumentNames.length; i++) {
+
+            ViewGroup templateLayout = createMonumentLayout(i);
+
+            setMonumentViewData(i);
+
+            monumentsLayout.addView(templateLayout);
+
         }
 
-     }
+    }
 
-    private RelativeLayout createMonumentItem(int monument) {
 
-        ImageView monumentImage = getMonumentImage(monument);
-        TextView monumentName = getMonumentName(monument);
-        TextView monumentText = getMonumentText(monument);
+    private void loadMonumentData() {
 
-        // template
+        // read static resource data
+        Resources res = getResources();
+        monumentNames = res.getStringArray(R.array.monuments);
+        fileNames = res.getStringArray(R.array.files);
+        monumentImageIds = new int[fileNames.length];
+        monumentDetails=new String[fileNames.length];
+
+        for (int i = 0; i < monumentNames.length; i++) {
+            // get the image resource id
+            monumentImageIds[i]= getImageResourceId(fileNames[i]);
+
+            // get the descriptions
+            monumentDetails[i] = getRawTextResource(fileNames[i]);
+        }
+
+    }
+
+    private void setMonumentViewData(int index) {
+        setMonumentImage(index);
+        setMonumentName(index);
+        setMonumentDetails(index);
+    }
+    /*
+        create the layout that will hold the various controls
+     */
+    private RelativeLayout createMonumentLayout(int index) {
+
+        monumentImageView = createMonumentImageView();
+        monumentNameView = createMonumentNameView();
+        monumentDetailView = createMonumentTextView();
+
+        // the outer layout for the template
         RelativeLayout layout = new RelativeLayout(this);
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.WRAP_CONTENT,
                 RelativeLayout.LayoutParams.WRAP_CONTENT );
         layout.setLayoutParams(params);
 
-        // monument image layout
+        // monument image
         params = new RelativeLayout.LayoutParams(150, 150); // image width and height
         params.addRule(RelativeLayout.ALIGN_PARENT_LEFT, RelativeLayout.TRUE);
-        layout.addView(monumentImage, params);
+
+        layout.addView(createMonumentImageView(), params);
 
         // monument name
         params = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.WRAP_CONTENT,
                 RelativeLayout.LayoutParams.WRAP_CONTENT);
-        params.addRule(RelativeLayout.RIGHT_OF, monumentImage.getId());
-        layout.addView(monumentName, params);
+        params.addRule(RelativeLayout.RIGHT_OF, monumentImageView.getId()); // add to right of image
+
+        layout.addView(monumentNameView, params);
 
         // monument details
         params = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.WRAP_CONTENT,
                 RelativeLayout.LayoutParams.WRAP_CONTENT);
-        params.addRule(RelativeLayout.BELOW, monumentImage.getId());
-        layout.addView(monumentText, params);
+        params.addRule(RelativeLayout.BELOW, monumentImageView.getId());
+        layout.addView(monumentDetailView, params);
 
+        // where ot add this layout is under tyhe previous Template RelativeLayout - if there is one
+        if(prevMonumentLayout!=null) { // no prev
+            RelativeLayout.LayoutParams relToPrevLayoutParams
+                    = new RelativeLayout.LayoutParams(
+                        RelativeLayout.LayoutParams.WRAP_CONTENT,
+                        RelativeLayout.LayoutParams.WRAP_CONTENT);
+            // put this widget below the one above
+            params.addRule(RelativeLayout.BELOW, prevMonumentLayout.getId() );
+        }
+        prevMonumentLayout = layout;
         return layout;
     }
 
-    private ImageView getMonumentImage(int monument) {
-        ImageView monumentImage = new ImageView( getApplicationContext() );
-        String fileName = fileNames[monument];
-        String resourceType = "drawable";
-        String packageName = getApplicationContext().getPackageName();
-        Resources res = this.getResources();
-        int identifier = res.getIdentifier( fileName, resourceType, packageName );
-        monumentImage.setImageResource(identifier);
-        monumentImage.setPadding(0, 10, 5, 5); // left, top, right, bottom
-        monumentImage.setBackgroundColor(Color.WHITE);
-        monumentImage.setId( getUniqueViewId() );
-        return monumentImage;
+    public ImageView createMonumentImageView() {
+
+        monumentImageView = new ImageView( getApplicationContext() );
+        // monumentImage.setImageResource(identifier);      // set later!!
+        monumentImageView.setPadding(0, 10, 5, 5); // left, top, right, bottom
+        monumentImageView.setBackgroundColor(Color.WHITE);
+        monumentImageView.setId( getUniqueViewId() );
+        return monumentImageView;
     }
 
-    private TextView getMonumentName(int monument) {
+    private void setMonumentImage(int index){
+        monumentImageView.setImageResource(monumentImageIds[index]); // set later!!
+    }
+
+    private TextView createMonumentNameView() {
         TextView monumentName = new TextView(getApplicationContext());
-        monumentName.setText(monuments[monument]);
+        // monumentName.setText(monuments[monument]);
         monumentName.setTextColor(Color.BLACK);
         monumentName.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
         monumentName.setGravity(Gravity.CENTER_VERTICAL);
@@ -117,7 +163,12 @@ public class MonumentsMain extends ActionBarActivity {
         return monumentName;
     }
 
-    private TextView getMonumentText(int monument) {
+    private void setMonumentName(int index) {
+        monumentNameView.setText(monumentNames[index]);
+    }
+
+    private TextView createMonumentTextView() {
+
         RelativeLayout.LayoutParams generalParams = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.WRAP_CONTENT,
                 RelativeLayout.LayoutParams.MATCH_PARENT );
@@ -126,8 +177,28 @@ public class MonumentsMain extends ActionBarActivity {
         monumentText.setTextColor(Color.DKGRAY);
         monumentText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
         monumentText.setId( getUniqueViewId() );
+        return monumentText;
 
-        String fileName = fileNames[monument];
+    }
+
+    private void setMonumentDetails(int index) {
+        monumentDetailView.setText( getRawTextResource(fileNames[index]));
+    }
+
+
+
+    private int getImageResourceId(String fileName) {
+
+        String resourceType = "drawable";
+        String packageName = getApplicationContext().getPackageName();
+        Resources res = this.getResources();
+        int identifier = res.getIdentifier( fileName, resourceType, packageName );
+        return identifier;
+
+    }
+
+    private String getRawTextResource(String fileName) {
+        String text="Error reading text";
         String resourceType = "raw";
         String packageName = getApplicationContext().getPackageName();
         Resources res = this.getResources();
@@ -137,13 +208,16 @@ public class MonumentsMain extends ActionBarActivity {
             file = res.openRawResource(identifier);
             byte[] buffer = new byte[file.available()];
             file.read(buffer, 0, buffer.length);
-            monumentText.setText(new String(buffer, "UTF-8"));
+            text = new String(buffer, "UTF-8");
             file.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return monumentText;
+        return text;
     }
+
+
+
 
     private static int getUniqueViewId() {
         int uniqueID = 0;
@@ -158,7 +232,7 @@ public class MonumentsMain extends ActionBarActivity {
     private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
 
     /**
-     * Generate a value suitable for use in {@link #setId(int)}.
+     * Generate a value suitable for use in
      * This value will not collide with ID values generated at build time by aapt for R.id.
      *
      * @return a generated ID value
@@ -175,25 +249,4 @@ public class MonumentsMain extends ActionBarActivity {
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_monuments_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 }
